@@ -1,7 +1,7 @@
 import configparser
 import os
 
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, Window
 from pyspark.sql.functions import *
 
 config = configparser.ConfigParser()
@@ -59,6 +59,7 @@ def process_song_data(spark, input_data, output_data):
         .parquet(output_data + "/artists")
 
 
+# TODO: rename all columns to snake case on start
 def process_log_data(spark, input_data, output_data):
     # get filepath to log data file
     log_data = input_data + "/log-data"
@@ -77,9 +78,12 @@ def process_log_data(spark, input_data, output_data):
 
     # extract columns for users table
 
-    # TODO: SELECT *, ROW_NUMBER() OVER(PARTITION BY user_id ORDER BY ts DESC)
-    users_table = df.select("userId", "firstName", "lastName", "gender", "level")
-    users_table = users_table.dropDuplicates(['userId'])
+
+    # Adapted from https://sparkbyexamples.com/pyspark/pyspark-window-functions/
+    deduped_users_df = df.withColumn("row_number", row_number().over(
+        Window.partitionBy("userId").orderBy(desc("ts"))))
+    users_table = deduped_users_df.select("userId", "firstName", "lastName", "gender", "level") \
+        .where(deduped_users_df.row_number == 1)
 
     # write users table to parquet files
     users_table \
