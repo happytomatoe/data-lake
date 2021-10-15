@@ -42,8 +42,9 @@ lint: venv
 	${PYTHON_VENV} -m pylint 
 	${PYTHON_VENV} -m mypy
 
-run: venv
-	${PYTHON_VENV} etl.py
+run:
+	rm -rf out
+	${SPARK_HOME}/bin/spark-submit etl.py
 
 doc: venv
 	$(VENV_ACTIVATE) && cd docs; make html
