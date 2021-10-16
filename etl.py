@@ -21,15 +21,16 @@ def create_spark_session():
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.3") \
         .getOrCreate()
     hadoop_configuration = spark.sparkContext._jsc.hadoopConfiguration()
-    hadoop_configuration.set("fs.s3a.access.key", os.environ['AWS_ACCESS_KEY_ID'][1:-1])
-    hadoop_configuration.set("fs.s3a.secret.key", os.environ['AWS_SECRET_ACCESS_KEY'][1:-1])
-    hadoop_configuration.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.profile.ProfileCredentialsProvider")
+    hadoop_configuration.set("fs.s3a.access.key", os.environ['AWS_ACCESS_KEY_ID'])
+    hadoop_configuration.set("fs.s3a.secret.key", os.environ['AWS_SECRET_ACCESS_KEY'])
+    hadoop_configuration.set("fs.s3a.aws.credentials.provider",
+                             "com.amazonaws.auth.profile.ProfileCredentialsProvider")
     return spark
 
 
 def process_song_data(spark, input_data, output_data):
     # get filepath to song data file
-    song_data = input_data + "/song-data/A/A/A"
+    song_data = input_data + "/song-data/"
     print(f"song data folder {song_data}")
     # read song data file
     df = spark.read \
@@ -80,10 +81,12 @@ def process_log_data(spark, input_data, output_data):
     # extract columns for users table
 
     # Adapted from https://sparkbyexamples.com/pyspark/pyspark-window-functions/
-    deduped_users_df = df.withColumn("row_number", row_number().over(
+    users_df = df.withColumn("row_number", row_number().over(
         Window.partitionBy("userId").orderBy(desc("ts"))))
-    users_table = deduped_users_df.select("userId", "firstName", "lastName", "gender", "level") \
-        .where(deduped_users_df.row_number == 1)
+
+    deduped_users_df = users_df.where(users_df.row_number == 1)
+
+    users_table = deduped_users_df.select("userId", "firstName", "lastName", "gender", "level")
 
     # write users table to parquet files
     users_table \
