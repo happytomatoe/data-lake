@@ -23,11 +23,23 @@ def create_spark_session():
     """
     Creates and returns spark session
     """
-    print("Starting spark context")
+    global logger
+
     spark = SparkSession \
         .builder \
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.3") \
         .getOrCreate()
+
+    # set spark log levels to warn
+    log4j = spark.sparkContext._jvm.org.apache.log4j
+    log4j.LogManager.getRootLogger().setLevel(log4j.Level.ERROR)
+    log4j.LogManager.getLogger('org.apache.spark').setLevel(log4j.Level.WARN)
+    log4j.LogManager.getLogger('org.spark-project').setLevel(log4j.Level.WARN)
+
+    logger = log4j.LogManager.getLogger('ETL')
+    logger.setLevel(log4j.Level.INFO)
+
+    # set aws s3 properties
     hadoop_configuration = spark.sparkContext._jsc.hadoopConfiguration()
     hadoop_configuration.set("fs.s3a.access.key", os.environ['AWS_ACCESS_KEY_ID'])
     hadoop_configuration.set("fs.s3a.secret.key", os.environ['AWS_SECRET_ACCESS_KEY'])
@@ -44,16 +56,16 @@ def process_song_data(spark, input_data_path, output_data_path):
     :param output_data_path: output data location
     """
     # get filepath to song data file
-    song_data = input_data_path + "/song-data/A/A/C"
+    song_data = input_data_path + "/song-data/"
     # read song data file
-    print(f"Reading song data from {song_data}")
+    logger.info(f"Reading song data from {song_data}")
     song_data_df = spark.read \
         .option("recursiveFileLookup", "true") \
         .json(song_data)
     song_data_df = song_data_df.withColumn("year",
                                            f.when(f.col("year") == 0, None).otherwise(f.col(
                                                "year")))
-    print("Caching song data")
+    logger.info("Caching song data")
     song_data_df.cache()
 
     create_song_table(output_data_path, song_data_df)
@@ -67,19 +79,20 @@ def create_artists_table(output_data_path, song_data_df):
     :param output_data_path: output data location
     :param song_data_df: song data dataframe
     """
-    print("Processing artists data")
+    logger.info("Processing artists data")
     artists_table = song_data_df.select("artist_id", "artist_name", "artist_location",
                                         "artist_latitude",
                                         "artist_longitude")
-    print("Deduping artists")
+    logger.info("Deduping artists")
     artists_table.dropDuplicates(['artist_id', 'artist_name'])
     artists_table.createOrReplaceTempView("artists")
 
-    print("Writing artists data")
     # write artists table to parquet files
+    path = output_data_path + "/artists"
+    logger.info(f"Writing artists data {path}")
     artists_table.write \
         .mode("overwrite") \
-        .parquet(output_data_path + "/artists")
+        .parquet(path)
 
 
 def create_song_table(output_data_path, song_data_df):
@@ -89,16 +102,18 @@ def create_song_table(output_data_path, song_data_df):
     :param song_data_df: song data dataframe
     """
     # extract columns to create songs table
-    print("Processing song data")
+    logger.info("Processing song data")
     songs_table = song_data_df.select('song_id', "title", "artist_id", "year", "duration")
     songs_table = songs_table.dropDuplicates(['song_id'])
     songs_table.createOrReplaceTempView("songs")
+
     # write songs table to parquet files partitioned by year and artist
-    print("Writing song table to s3")
+    path = output_data_path + "/songs"
+    logger.info(f"Writing song table to {path}")
     songs_table.write \
         .partitionBy("year", "artist_id") \
         .mode("overwrite") \
-        .parquet(output_data_path + "/songs")
+        .parquet(path)
 
 
 def process_log_data(spark, input_data_path, output_data_path):
@@ -133,21 +148,21 @@ def process_log_data(spark, input_data_path, output_data_path):
         StructField("userId", StringType(), True),
     ])
 
-    print("Reading log data file")
+    logger.info("Reading log data file")
     # read log data file
     df = spark.read \
         .option("recursiveFileLookup", "true") \
         .schema(log_data_schema) \
         .json(log_data)
-    df.printSchema()
+    df.logger.infoSchema()
     # filter by actions for song plays
     df = df.where(f.col("page") == "NextSong")
 
-    print("Deduping events")
+    logger.info("Deduping events")
 
     # dedupe events
     df = df.dropDuplicates(['ts', 'userid', 'sessionid', 'song', 'artist'])
-    print("Caching events")
+    logger.info("Caching events")
     df.cache()
 
     create_users_table(df, output_data_path)
@@ -169,7 +184,7 @@ def create_songplays_table(log_df, output_data_path, spark, start_time_column_na
     :param start_time_column_name: 
     :param time_table_df: dataframe with time data
     """
-    print("Creating songplays table")
+    logger.info("Creating songplays table")
     # read in song data to use for songplays table
     song_df = log_df.withColumn('userAgent', f.regexp_replace('userAgent', '"', ''))
     artists_and_songs_df = spark.sql("SELECT * FROM songs s JOIN artists a USING(artist_id) ")
@@ -187,13 +202,15 @@ def create_songplays_table(log_df, output_data_path, spark, start_time_column_na
                                          'level', 'song_id', 'artist_id',
                                          'sessionId as session_id', 'location',
                                          'userAgent as user_agent', 'time_table.year', 'month')
-    print("Writing songplays table to s3")
+
     # write songplays table to parquet files partitioned by year and month
+    path = output_data_path + '/songplays'
+    logger.info(f"Writing songplays table to {path}")
     songplays_table \
         .write \
         .partitionBy("year", "month") \
         .mode('overwrite') \
-        .json(output_data_path + '/songplays')
+        .json(path)
 
 
 def create_time_table(log_df, output_data_path, start_time_column_name):
@@ -204,7 +221,7 @@ def create_time_table(log_df, output_data_path, start_time_column_name):
     :param start_time_column_name:
     :return: dataframe with time data
     """
-    print("Creating time table")
+    logger.info("Creating time table")
     # extract columns to create time table
     time_table = log_df.selectExpr(start_time_column_name)
     time_table = time_table.dropDuplicates([start_time_column_name])
@@ -215,12 +232,14 @@ def create_time_table(log_df, output_data_path, start_time_column_name):
                                        f'month({start_time_column_name}) as month',
                                        f'year({start_time_column_name}) as year',
                                        f'dayofweek({start_time_column_name}) as weekday')
-    print("Writing time table to s3")
+
     # write time table to parquet files partitioned by year and month
+    path = output_data_path + "/time"
+    logger.info(f"Writing time table to {path}")
     time_table.write \
         .partitionBy("year", "month") \
         .mode("overwrite") \
-        .parquet(output_data_path + "/time")
+        .parquet(path)
     return time_table
 
 
@@ -230,24 +249,25 @@ def create_users_table(log_data_df, output_data_path):
     :param log_data_df: log data dataframe
     :param output_data_path: output data location
     """
-    print("Creating users table")
+    logger.info("Creating users table")
     # Adapted from https://sparkbyexamples.com/pyspark/pyspark-window-functions/
     users_df = log_data_df.withColumn("row_number", f.row_number().over(
         Window.partitionBy("userId").orderBy(f.desc("ts"))))
     deduped_users_df = users_df.where(users_df.row_number == 1)
     users_table = deduped_users_df.select("userId", "firstName", "lastName", "gender", "level")
 
-    print("Writing users data to s3")
     # write users table to parquet files
+    path = output_data_path + "/users"
+    logger.info(f"Writing users data to {path}")
     users_table \
         .write \
         .mode("overwrite") \
-        .parquet(output_data_path + "/users")
+        .parquet(path)
 
 
 def main():
     input_data_path = "s3a://udacity-dend"
-    output_data_path = ""
+    output_data_path = "s3a://udacity-data-modelling/test2"
 
     if not output_data_path:
         raise ValueError('output_data_path is not set')
