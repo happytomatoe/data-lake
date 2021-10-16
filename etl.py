@@ -21,16 +21,15 @@ def create_spark_session():
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.3") \
         .getOrCreate()
     hadoop_configuration = spark.sparkContext._jsc.hadoopConfiguration()
-    hadoop_configuration.set("fs.s3a.access.key", os.environ['AWS_ACCESS_KEY_ID'])
-    hadoop_configuration.set("fs.s3a.secret.key", os.environ['AWS_SECRET_ACCESS_KEY'])
-    hadoop_configuration.set("fs.s3a.aws.credentials.provider",
-                             "com.amazonaws.auth.profile.ProfileCredentialsProvider")
+    hadoop_configuration.set("fs.s3a.access.key", os.environ['AWS_ACCESS_KEY_ID'][1:-1])
+    hadoop_configuration.set("fs.s3a.secret.key", os.environ['AWS_SECRET_ACCESS_KEY'][1:-1])
+    hadoop_configuration.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.profile.ProfileCredentialsProvider")
     return spark
 
 
 def process_song_data(spark, input_data, output_data):
     # get filepath to song data file
-    song_data = input_data + "/song-data/"
+    song_data = input_data + "/song-data/A/A/A"
     print(f"song data folder {song_data}")
     # read song data file
     df = spark.read \

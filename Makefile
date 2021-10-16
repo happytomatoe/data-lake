@@ -48,3 +48,6 @@ run:
 
 doc: venv
 	$(VENV_ACTIVATE) && cd docs; make html
+
+deploy:
+	aws s3 cp etl.py s3://udacity/emr/data-lake/
