@@ -11,8 +11,9 @@ with open('dl.cfg', 'r') as f:
     config_string = '[default]\n' + f.read()
 config.read_string(config_string)
 
-os.environ['AWS_ACCESS_KEY_ID'] = config.get('default', 'AWS_ACCESS_KEY_ID')
-os.environ['AWS_SECRET_ACCESS_KEY'] = config.get('default', 'AWS_SECRET_ACCESS_KEY')
+# Remove ` at the start and end of the string
+os.environ['AWS_ACCESS_KEY_ID'] = config.get('default', 'AWS_ACCESS_KEY_ID')[1:-1]
+os.environ['AWS_SECRET_ACCESS_KEY'] = config.get('default', 'AWS_SECRET_ACCESS_KEY')[1:-1]
 
 def create_spark_session():
     spark = SparkSession \
@@ -21,8 +22,8 @@ def create_spark_session():
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.3") \
         .getOrCreate()
     hadoop_configuration = spark.sparkContext._jsc.hadoopConfiguration()
-    hadoop_configuration.set("fs.s3a.access.key", os.environ['AWS_ACCESS_KEY_ID'][1:-1])
-    hadoop_configuration.set("fs.s3a.secret.key", os.environ['AWS_SECRET_ACCESS_KEY'][1:-1])
+    hadoop_configuration.set("fs.s3a.access.key", os.environ['AWS_ACCESS_KEY_ID'])
+    hadoop_configuration.set("fs.s3a.secret.key", os.environ['AWS_SECRET_ACCESS_KEY'])
     hadoop_configuration.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.profile.ProfileCredentialsProvider")
     return spark
 
