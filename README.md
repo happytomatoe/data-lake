@@ -66,3 +66,5 @@ wget https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.7.4/aws-java-sd
 ```shell
 spark-submit etl.py
 ```
+
+It will take some time to read/write data

@@ -56,7 +56,7 @@ def process_song_data(spark, input_data_path, output_data_path):
     :param output_data_path: output data location
     """
     # get filepath to song data file
-    song_data = input_data_path + "/song-data/"
+    song_data = input_data_path + "/song-data/A/A/C"
     # read song data file
     logger.info(f"Reading song data from {song_data}")
     song_data_df = spark.read \
@@ -154,7 +154,6 @@ def process_log_data(spark, input_data_path, output_data_path):
         .option("recursiveFileLookup", "true") \
         .schema(log_data_schema) \
         .json(log_data)
-    df.logger.infoSchema()
     # filter by actions for song plays
     df = df.where(f.col("page") == "NextSong")
 
@@ -267,7 +266,7 @@ def create_users_table(log_data_df, output_data_path):
 
 def main():
     input_data_path = "s3a://udacity-dend"
-    output_data_path = "s3a://udacity-data-modelling/test2"
+    output_data_path = "s3a://udacity-data-modelling/sparkify"
 
     if not output_data_path:
         raise ValueError('output_data_path is not set')
