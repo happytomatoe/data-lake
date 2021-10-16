@@ -1,9 +1,9 @@
 import configparser
 import os
 
+import pyspark.sql.functions as f
 from pyspark.sql import SparkSession, Window
-from pyspark.sql.functions import *
-from pyspark.sql.types import *
+from pyspark.sql.types import StructType, StructField, StringType, LongType, DoubleType
 
 START_TIME_COLUMN_NAME = 'start_time'
 
@@ -51,7 +51,8 @@ def process_song_data(spark, input_data_path, output_data_path):
         .option("recursiveFileLookup", "true") \
         .json(song_data)
     song_data_df = song_data_df.withColumn("year",
-                                           when(col("year") == 0, None).otherwise(col("year")))
+                                           f.when(f.col("year") == 0, None).otherwise(f.col(
+                                               "year")))
     print("Caching song data")
     song_data_df.cache()
 
@@ -140,7 +141,7 @@ def process_log_data(spark, input_data_path, output_data_path):
         .json(log_data)
     df.printSchema()
     # filter by actions for song plays
-    df = df.where(col("page") == "NextSong")
+    df = df.where(f.col("page") == "NextSong")
 
     print("Deduping events")
 
@@ -152,7 +153,7 @@ def process_log_data(spark, input_data_path, output_data_path):
     create_users_table(df, output_data_path)
 
     # create timestamp column from original timestamp column
-    df = df.withColumn(START_TIME_COLUMN_NAME, from_unixtime(col("ts") / 1000)).drop('ts')
+    df = df.withColumn(START_TIME_COLUMN_NAME, f.from_unixtime(f.col("ts") / 1000)).drop('ts')
 
     time_table = create_time_table(df, output_data_path, START_TIME_COLUMN_NAME)
 
@@ -170,7 +171,7 @@ def create_songplays_table(log_df, output_data_path, spark, start_time_column_na
     """
     print("Creating songplays table")
     # read in song data to use for songplays table
-    song_df = log_df.withColumn('userAgent', regexp_replace('userAgent', '"', ''))
+    song_df = log_df.withColumn('userAgent', f.regexp_replace('userAgent', '"', ''))
     artists_and_songs_df = spark.sql("SELECT * FROM songs s JOIN artists a USING(artist_id) ")
     song_df = song_df.join(artists_and_songs_df, [song_df.song == artists_and_songs_df.title, \
                                                   song_df.artist == artists_and_songs_df.artist_name, \
@@ -179,7 +180,7 @@ def create_songplays_table(log_df, output_data_path, spark, start_time_column_na
     song_df = song_df.join(time_table_df.alias("time_table"), [start_time_column_name], 'inner')
     # generate uuid
     # copied code from https://stackoverflow.com/questions/49785108/spark-streaming-with-python-how-to-add-a-uuid-column/50095755
-    song_df = song_df.withColumn("songplay_id", expr("uuid()"))
+    song_df = song_df.withColumn("songplay_id", f.expr("uuid()"))
     # extract columns from joined song and log datasets to create songplays table
     songplays_table = song_df.selectExpr('songplay_id', start_time_column_name,
                                          'userId as user_id',
@@ -231,8 +232,8 @@ def create_users_table(log_data_df, output_data_path):
     """
     print("Creating users table")
     # Adapted from https://sparkbyexamples.com/pyspark/pyspark-window-functions/
-    users_df = log_data_df.withColumn("row_number", row_number().over(
-        Window.partitionBy("userId").orderBy(desc("ts"))))
+    users_df = log_data_df.withColumn("row_number", f.row_number().over(
+        Window.partitionBy("userId").orderBy(f.desc("ts"))))
     deduped_users_df = users_df.where(users_df.row_number == 1)
     users_table = deduped_users_df.select("userId", "firstName", "lastName", "gender", "level")
 
