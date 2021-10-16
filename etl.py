@@ -150,21 +150,21 @@ def process_log_data(spark, input_data_path, output_data_path):
     print("Caching events")
     df.cache()
 
-    process_users_data(df, output_data_path)
+    create_users_table(df, output_data_path)
 
     # create timestamp column from original timestamp column
     df = df.withColumn(START_TIME_COLUMN_NAME, from_unixtime(col("ts") / 1000)).drop('ts')
 
-    time_table = process_time_data(df, output_data_path, START_TIME_COLUMN_NAME)
+    time_table = create_time_table(df, output_data_path, START_TIME_COLUMN_NAME)
 
-    process_songplays_data(df, output_data_path, spark, START_TIME_COLUMN_NAME, time_table)
+    create_songplays_table(df, output_data_path, spark, START_TIME_COLUMN_NAME, time_table)
 
 
-def process_songplays_data(log_df, output_data, spark, start_time_column_name, time_table_df):
+def create_songplays_table(log_df, output_data_path, spark, start_time_column_name, time_table_df):
     """
     Create and save songplays table
     :param log_df: dataframe with logs data
-    :param output_data: output location
+    :param output_data_path: output location
     :param spark: spark session
     :param start_time_column_name: 
     :param time_table_df: dataframe with time data
@@ -193,10 +193,10 @@ def process_songplays_data(log_df, output_data, spark, start_time_column_name, t
         .write \
         .partitionBy("year", "month") \
         .mode('overwrite') \
-        .json(output_data + '/songplays')
+        .json(output_data_path + '/songplays')
 
 
-def process_time_data(log_df, output_data_path, start_time_column_name):
+def create_time_table(log_df, output_data_path, start_time_column_name):
     """
     Creates and writes time table
     :param log_df: dataframe with log data
@@ -224,7 +224,7 @@ def process_time_data(log_df, output_data_path, start_time_column_name):
     return time_table
 
 
-def process_users_data(log_data_df, output_data_path):
+def create_users_table(log_data_df, output_data_path):
     """
     Create and save users table
     :param log_data_df: log data dataframe
