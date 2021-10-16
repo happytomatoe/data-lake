@@ -68,7 +68,7 @@ def process_song_data(spark, input_data_path, output_data_path):
     logger.info("Caching song data")
     song_data_df.cache()
 
-    create_song_table(output_data_path, song_data_df)
+    create_songs_table(output_data_path, song_data_df)
 
     create_artists_table(output_data_path, song_data_df)
 
@@ -89,15 +89,15 @@ def create_artists_table(output_data_path, song_data_df):
 
     # write artists table to parquet files
     path = output_data_path + "/artists"
-    logger.info(f"Writing artists data {path}")
+    logger.info(f"Writing artists data to {path}")
     artists_table.write \
         .mode("overwrite") \
         .parquet(path)
 
 
-def create_song_table(output_data_path, song_data_df):
+def create_songs_table(output_data_path, song_data_df):
     """
-    Crate and save song table
+    Crate and save songs table
     :param output_data_path: output data location
     :param song_data_df: song data dataframe
     """
@@ -109,7 +109,7 @@ def create_song_table(output_data_path, song_data_df):
 
     # write songs table to parquet files partitioned by year and artist
     path = output_data_path + "/songs"
-    logger.info(f"Writing song table to {path}")
+    logger.info(f"Writing songs table to {path}")
     songs_table.write \
         .partitionBy("year", "artist_id") \
         .mode("overwrite") \
