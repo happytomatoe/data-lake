@@ -246,12 +246,13 @@ def create_users_table(log_data_df, output_data_path):
 
 
 def main():
-    spark = create_spark_session()
     input_data_path = "s3a://udacity-dend"
     output_data_path = ""
 
     if not output_data_path:
         raise ValueError('output_data_path is not set')
+
+    spark = create_spark_session()
 
     process_song_data(spark, input_data_path, output_data_path)
     process_log_data(spark, input_data_path, output_data_path)
