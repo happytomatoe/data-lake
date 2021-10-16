@@ -148,7 +148,7 @@ def process_log_data(spark, input_data_path, output_data_path):
         StructField("userId", StringType(), True),
     ])
 
-    logger.info("Reading log data files")
+    logger.info(f"Reading log data files from {log_data}")
     # read log data file
     df = spark.read \
         .option("recursiveFileLookup", "true") \
