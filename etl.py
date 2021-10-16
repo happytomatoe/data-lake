@@ -56,7 +56,7 @@ def process_song_data(spark, input_data_path, output_data_path):
     :param output_data_path: output data location
     """
     # get filepath to song data file
-    song_data = input_data_path + "/song-data/A/A/C/TRAACAS128F4216F17.json"
+    song_data = input_data_path + "/song-data/"
     # read song data file
     logger.info(f"Reading song data from {song_data}")
     song_data_df = spark.read \
@@ -266,7 +266,7 @@ def create_users_table(log_data_df, output_data_path):
 
 def main():
     input_data_path = "s3a://udacity-dend"
-    output_data_path = "s3a://udacity-data-modelling/sparkify"
+    output_data_path = ""
 
     if not output_data_path:
         raise ValueError('output_data_path is not set')

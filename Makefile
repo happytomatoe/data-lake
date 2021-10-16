@@ -43,7 +43,6 @@ lint: venv
 	${PYTHON_VENV} -m mypy
 
 run:
-	aws s3 rm s3://udacity-data-modelling/sparkify
 	${SPARK_HOME}/bin/spark-submit etl.py
 
 doc: venv
