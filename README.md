@@ -41,7 +41,7 @@ cd $SPARK_HOME/jars
 wget https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/2.7.3/hadoop-aws-2.7.3.jar
 ```
 
-Note: hadoop-aws version should be compatible with hadoop-common.jar in the $SPARK_HOME/jars folder
+Note: hadoop-aws version should be compatible with hadoop-common.jar version in the $SPARK_HOME/jars folder
 
 3) Download aws sdk version that coresponds to hadoop aws version. Then you selected hadoop aws version on the bottom of
    the page there is "Compile Dependencies". Click on aws sdk version, it will take to the aws sdk download page. 
