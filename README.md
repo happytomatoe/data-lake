@@ -66,5 +66,11 @@ wget https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.7.4/aws-java-sd
 ```shell
 spark-submit etl.py
 ```
+Note:
+If you are running this in udacity vm you can specify spark ui port and monitor application 
+execution 
+```shell
+spark-submit --conf spark.ui.port=3000 etl.py 
+```
 
 It will take some time to read/write data

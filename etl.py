@@ -56,7 +56,7 @@ def process_song_data(spark, input_data_path, output_data_path):
     :param output_data_path: output data location
     """
     # get filepath to song data file
-    song_data = input_data_path + "/song-data/A/A/C"
+    song_data = input_data_path + "/song-data/A/A/C/TRAACAS128F4216F17.json"
     # read song data file
     logger.info(f"Reading song data from {song_data}")
     song_data_df = spark.read \
