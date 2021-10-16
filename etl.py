@@ -14,7 +14,7 @@ os.environ['AWS_SECRET_ACCESS_KEY'] = config.get('AWS', 'AWS_SECRET_ACCESS_KEY')
 def create_spark_session():
     spark = SparkSession \
         .builder \
-        .master("local[*]")\
+        .master("local[*]") \
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.0") \
         .getOrCreate()
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", os.environ[
@@ -28,7 +28,7 @@ def create_spark_session():
 
 def process_song_data(spark, input_data, output_data):
     # get filepath to song data file
-    song_data = input_data + "/song-data"
+    song_data = input_data + "/song-data/A/A/A"
     print(f"song data folder {song_data}")
     # read song data file
     df = spark.read \
@@ -60,7 +60,6 @@ def process_song_data(spark, input_data, output_data):
         .parquet(output_data + "/artists")
 
 
-# TODO: rename all columns to snake case on start
 def process_log_data(spark, input_data, output_data):
     # get filepath to log data file
     log_data = input_data + "/log-data"
@@ -78,7 +77,6 @@ def process_log_data(spark, input_data, output_data):
     df.cache()
 
     # extract columns for users table
-
 
     # Adapted from https://sparkbyexamples.com/pyspark/pyspark-window-functions/
     deduped_users_df = df.withColumn("row_number", row_number().over(
@@ -145,9 +143,6 @@ def process_log_data(spark, input_data, output_data):
 def main():
     spark = create_spark_session()
     input_data = "s3a://udacity-dend"
-
-    # input_data = "file:///" + os.getcwd() + "/data"
-    # output_data = os.getcwd() + "/out/"
     output_data = "s3a://udacity-data-modelling/sparkify"
 
     process_song_data(spark, input_data, output_data)
