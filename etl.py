@@ -14,6 +14,7 @@ os.environ['AWS_SECRET_ACCESS_KEY'] = config.get('AWS', 'AWS_SECRET_ACCESS_KEY')
 def create_spark_session():
     spark = SparkSession \
         .builder \
+        .master("local[*]")\
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.0") \
         .getOrCreate()
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", os.environ[
@@ -27,7 +28,7 @@ def create_spark_session():
 
 def process_song_data(spark, input_data, output_data):
     # get filepath to song data file
-    song_data = input_data + "/song-data/"
+    song_data = input_data + "/song-data/A/A/A"
     print(f"song data folder {song_data}")
     # read song data file
     df = spark.read \
@@ -42,10 +43,13 @@ def process_song_data(spark, input_data, output_data):
     songs_table.createOrReplaceTempView("songs")
 
     # write songs table to parquet files partitioned by year and artist
+    # .partitionBy("year", "artist_id") \
+
     songs_table.write \
-        .partitionBy("year", "artist_id") \
         .mode("overwrite") \
-        .parquet(output_data + "/songs")
+        .jdbc(url=url, table="songs", mode=mode, properties=properties)
+
+    # .parquet(output_data + "/songs")
 
     # extract columns to create artists table
     artists_table = df.select("artist_id", "artist_name", "artist_location", "artist_latitude",
@@ -56,7 +60,14 @@ def process_song_data(spark, input_data, output_data):
     # write artists table to parquet files
     artists_table.write \
         .mode("overwrite") \
-        .parquet(output_data + "/artists")
+        .jdbc(url=url, table="artists", mode=mode, properties=properties)
+
+    # .parquet(output_data + "/artists")
+
+
+mode = "overwrite"
+url = "jdbc:postgresql://localhost:5432/postgres"
+properties = {"user": "student", "password": "student", "driver": "org.postgresql.Driver"}
 
 
 # TODO: rename all columns to snake case on start
@@ -78,7 +89,6 @@ def process_log_data(spark, input_data, output_data):
 
     # extract columns for users table
 
-
     # Adapted from https://sparkbyexamples.com/pyspark/pyspark-window-functions/
     deduped_users_df = df.withColumn("row_number", row_number().over(
         Window.partitionBy("userId").orderBy(desc("ts"))))
@@ -88,7 +98,9 @@ def process_log_data(spark, input_data, output_data):
     # write users table to parquet files
     users_table \
         .write \
-        .parquet(output_data + "/users")
+        .jdbc(url=url, table="users", mode=mode, properties=properties)
+
+    # .parquet(output_data + "/users")
 
     # create timestamp column from original timestamp column
     start_time_column_name = 'start_time'
@@ -106,10 +118,13 @@ def process_log_data(spark, input_data, output_data):
                                        f'dayofweek({start_time_column_name}) as weekday')
 
     # write time table to parquet files partitioned by year and month
+    # .partitionBy("year", "month") \
+
     time_table.write \
-        .partitionBy("year", "month") \
         .mode("overwrite") \
-        .parquet(output_data + "/time")
+        .jdbc(url=url, table="time", mode=mode, properties=properties)
+
+    # .parquet(output_data + "/time")
 
     # read in song data to use for songplays table
     song_df = df.withColumn('userAgent', regexp_replace('userAgent', '"', ''))
@@ -134,18 +149,21 @@ def process_log_data(spark, input_data, output_data):
                                          'userAgent as user_agent', 'time_table.year', 'month')
 
     # write songplays table to parquet files partitioned by year and month
+    # .partitionBy("year", "month") \
     songplays_table \
         .write \
-        .partitionBy("year", "month") \
         .mode('overwrite') \
-        .json(output_data + '/songplays')
+        .jdbc(url=url, table="songplays", mode=mode, properties=properties)
+        # .json(output_data + '/songplays')
 
 
 def main():
     spark = create_spark_session()
-    # input_data = "s3a://udacity-dend"
-    input_data = "file:///" + os.getcwd() + "/data"
-    output_data = os.getcwd() + "/out/"
+    input_data = "s3a://udacity-dend"
+    
+    # input_data = "file:///" + os.getcwd() + "/data"
+    # output_data = os.getcwd() + "/out/"
+    output_data = "s3a://udacity-data-modelling/sparkify"
 
     process_song_data(spark, input_data, output_data)
     process_log_data(spark, input_data, output_data)
