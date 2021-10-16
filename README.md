@@ -78,4 +78,6 @@ And click on preview to open spark history server
 ```shell
 spark-submit --conf spark.ui.port=3000 --conf spark.sql.shuffle.partitions=2 etl.py
 ```
-It will take some time to read/write data
+Notes:
+- It will take some time to read/write data
+- Python script uses spark in memory caching. So if you have not enough memory you can get OOM exception
