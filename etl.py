@@ -14,6 +14,7 @@ os.environ['AWS_SECRET_ACCESS_KEY'] = config.get('AWS', 'AWS_SECRET_ACCESS_KEY')
 def create_spark_session():
     spark = SparkSession \
         .builder \
+        .master("local[*]")\
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.0") \
         .getOrCreate()
     spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", os.environ[
@@ -27,7 +28,7 @@ def create_spark_session():
 
 def process_song_data(spark, input_data, output_data):
     # get filepath to song data file
-    song_data = input_data + "/song-data/"
+    song_data = input_data + "/song-data"
     print(f"song data folder {song_data}")
     # read song data file
     df = spark.read \
@@ -143,9 +144,11 @@ def process_log_data(spark, input_data, output_data):
 
 def main():
     spark = create_spark_session()
-    # input_data = "s3a://udacity-dend"
-    input_data = "file:///" + os.getcwd() + "/data"
-    output_data = os.getcwd() + "/out/"
+    input_data = "s3a://udacity-dend"
+
+    # input_data = "file:///" + os.getcwd() + "/data"
+    # output_data = os.getcwd() + "/out/"
+    output_data = "s3a://udacity-data-modelling/sparkify"
 
     process_song_data(spark, input_data, output_data)
     process_log_data(spark, input_data, output_data)
