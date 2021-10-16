@@ -28,7 +28,7 @@ a directory with JSON metadata on the songs in their app.
 # How to run a project
 
 
-1) Go to $SPARK_HOME/jars
+1) Go to `$SPARK_HOME/jars`
 
 ```shell
 cd $SPARK_HOME/jars
@@ -44,15 +44,15 @@ wget https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/2.7.3/hadoop-aw
 Note: hadoop-aws version should be compatible with hadoop-common.jar in the $SPARK_HOME/jars folder
 
 3) Download aws sdk version that coresponds to hadoop aws version. Then you selected hadoop aws version on the bottom of
-   the page there is "Compile Dependencies". Click on aws sdk version, it will take to the aws sdk download page. For
-   2.7.3
+   the page there is "Compile Dependencies". Click on aws sdk version, it will take to the aws sdk download page. 
+Next command download aws sdk jar for hadoop aws 2.7.3
 
 ```shell
 wget https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.7.4/aws-java-sdk-1.7.4.jar
 ```
 
-4) Set aws access key and aws secret key in dl.cfg
-5) Change output folder in etl.py main function
+4) Set `aws access key` and `aws secret key` in `dl.cfg`
+5) Change `output_data_path` variable in `etl.py` main function
 6) Run
 
 ```shell
