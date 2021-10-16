@@ -43,11 +43,12 @@ lint: venv
 	${PYTHON_VENV} -m mypy
 
 run:
-	rm -rf out
+	aws s3 rm s3://udacity-data-modelling/sparkify
 	${SPARK_HOME}/bin/spark-submit etl.py
 
 doc: venv
 	$(VENV_ACTIVATE) && cd docs; make html
 
 deploy:
-	aws s3 cp etl.py s3://udacity/emr/data-lake/
+	aws s3 cp emr-config.json s3://udacity-data-modelling/emr/
+	aws s3 cp etl.py s3://udacity-data-modelling/emr/data-lake/

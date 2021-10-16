@@ -26,7 +26,6 @@ def create_spark_session():
     print("Starting spark context")
     spark = SparkSession \
         .builder \
-        .master("local[*]") \
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.3") \
         .getOrCreate()
     hadoop_configuration = spark.sparkContext._jsc.hadoopConfiguration()

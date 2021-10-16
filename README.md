@@ -6,12 +6,27 @@ A music streaming startup, Sparkify, has grown their user base and song database
 warehouse to a data lake. Their data resides in S3, in a directory of JSON logs on user activity on the app, as well as
 a directory with JSON metadata on the songs in their app.
 
-# TODO
 
-To complete the project, you will need to load data from S3, process the data into analytics tables using Spark, and
-load them back into S3. You'll deploy this Spark process on a cluster using AWS.
+### Fact Table
+1) Songplays - records in event data associated with song plays i.e. records with page NextSong
+- songplay_id, start_time, user_id, level, song_id, artist_id, session_id, location, user_agent
+
+### Dimension Tables
+2) Users - users in the app
+- user_id, first_name, last_name, gender, level.
+
+3) Songs - songs in music database
+- song_id, title, artist_id, year, duration
+
+4) Artists - artists in music database
+- artist_id, name, location, lattitude, longitude
+
+5) Time - timestamps of records in songplays broken down into specific units
+- fields: start_time, hour, day, week, month, year, weekday
+- sortkey based on start_time to speed up joins
 
 # How to run a project
+
 
 1) Go to $SPARK_HOME/jars
 
