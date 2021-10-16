@@ -45,7 +45,7 @@ Note: hadoop-aws version should be compatible with hadoop-common.jar in the $SPA
 
 3) Download aws sdk version that coresponds to hadoop aws version. Then you selected hadoop aws version on the bottom of
    the page there is "Compile Dependencies". Click on aws sdk version, it will take to the aws sdk download page. 
-Next command download aws sdk jar for hadoop aws 2.7.3
+Next command downloads aws sdk jar for hadoop aws 2.7.3
 
 ```shell
 wget https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.7.4/aws-java-sdk-1.7.4.jar
