@@ -72,5 +72,6 @@ execution
 ```shell
 spark-submit --conf spark.ui.port=3000 etl.py 
 ```
-
+And click on preview to open spark history server 
+ 
 It will take some time to read/write data
