@@ -14,13 +14,20 @@ load them back into S3. You'll deploy this Spark process on a cluster using AWS.
 # How to run a project
 
 1) Go to $SPARK_HOME/jars
+
+```shell
+cd $SPARK_HOME/jars
+```
+
 2) Download hadoop aws jar. You can choose hadoop aws version on
    mvn [central repo](https://mvnrepository.com/artifact/org.apache.hadoop/hadoop-aws)
 
 ```shell
 wget https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/2.7.3/hadoop-aws-2.7.3.jar
 ```
+
 Note: hadoop-aws version should be compatible with hadoop-common.jar in the $SPARK_HOME/jars folder
+
 3) Download aws sdk version that coresponds to hadoop aws version. Then you selected hadoop aws version on the bottom of
    the page there is "Compile Dependencies". Click on aws sdk version, it will take to the aws sdk download page. For
    2.7.3

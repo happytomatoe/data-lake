@@ -8,25 +8,22 @@ config = configparser.ConfigParser()
 # Copied code how to get vars from config without header section from
 # https://stackoverflow.com/questions/2819696/parsing-properties-file-in-python/2819788#2819788
 with open('dl.cfg', 'r') as f:
-    config_string = '[AWS]\n' + f.read()
+    config_string = '[default]\n' + f.read()
 config.read_string(config_string)
 
-os.environ['AWS_ACCESS_KEY_ID'] = config.get('AWS', 'AWS_ACCESS_KEY_ID')
-os.environ['AWS_SECRET_ACCESS_KEY'] = config.get('AWS', 'AWS_SECRET_ACCESS_KEY')
-
+os.environ['AWS_ACCESS_KEY_ID'] = config.get('default', 'AWS_ACCESS_KEY_ID')
+os.environ['AWS_SECRET_ACCESS_KEY'] = config.get('default', 'AWS_SECRET_ACCESS_KEY')
 
 def create_spark_session():
     spark = SparkSession \
         .builder \
         .master("local[*]") \
-        .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.0") \
+        .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.3") \
         .getOrCreate()
-    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.access.key", os.environ[
-        'AWS_ACCESS_KEY_ID'])
-    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.secret.key",
-                                                      os.environ['AWS_SECRET_ACCESS_KEY'])
-    spark.sparkContext._jsc.hadoopConfiguration().set("fs.s3a.aws.credentials.provider",
-                                                      "com.amazonaws.auth.profile.ProfileCredentialsProvider")
+    hadoop_configuration = spark.sparkContext._jsc.hadoopConfiguration()
+    hadoop_configuration.set("fs.s3a.access.key", os.environ['AWS_ACCESS_KEY_ID'][1:-1])
+    hadoop_configuration.set("fs.s3a.secret.key", os.environ['AWS_SECRET_ACCESS_KEY'][1:-1])
+    hadoop_configuration.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.profile.ProfileCredentialsProvider")
     return spark
 
 
