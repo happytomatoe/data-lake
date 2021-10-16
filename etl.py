@@ -5,6 +5,8 @@ from pyspark.sql import SparkSession, Window
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 
+START_TIME_COLUMN_NAME = 'start_time'
+
 config = configparser.ConfigParser()
 # Copied code how to get vars from config without header section from
 # https://stackoverflow.com/questions/2819696/parsing-properties-file-in-python/2819788#2819788
@@ -21,6 +23,7 @@ def create_spark_session():
     """
     Creates and returns spark session
     """
+    print("Starting spark context")
     spark = SparkSession \
         .builder \
         .master("local[*]") \
@@ -34,53 +37,81 @@ def create_spark_session():
     return spark
 
 
-def process_song_data(spark, input_data, output_data):
+def process_song_data(spark, input_data_path, output_data_path):
+    """
+    Process song data creating various table associated with it
+    :param spark: spark session
+    :param input_data_path: input data location
+    :param output_data_path: output data location
+    """
     # get filepath to song data file
-    song_data = input_data + "/song-data/A/A/C"
-    print(f"song data folder {song_data}")
+    song_data = input_data_path + "/song-data/A/A/C"
     # read song data file
+    print(f"Reading song data from {song_data}")
     song_data_df = spark.read \
         .option("recursiveFileLookup", "true") \
         .json(song_data)
     song_data_df = song_data_df.withColumn("year",
                                            when(col("year") == 0, None).otherwise(col("year")))
+    print("Caching song data")
     song_data_df.cache()
 
-    process_song_table(output_data, song_data_df)
+    create_song_table(output_data_path, song_data_df)
 
-    # extract columns to create artists table
-    process_artists_table(output_data, song_data_df)
+    create_artists_table(output_data_path, song_data_df)
 
 
-def process_artists_table(output_data, song_data_df):
+def create_artists_table(output_data_path, song_data_df):
+    """
+    Create and save artists table
+    :param output_data_path: output data location
+    :param song_data_df: song data dataframe
+    """
+    print("Processing artists data")
     artists_table = song_data_df.select("artist_id", "artist_name", "artist_location",
                                         "artist_latitude",
                                         "artist_longitude")
+    print("Deduping artists")
     artists_table.dropDuplicates(['artist_id', 'artist_name'])
     artists_table.createOrReplaceTempView("artists")
+
+    print("Writing artists data")
     # write artists table to parquet files
     artists_table.write \
         .mode("overwrite") \
-        .parquet(output_data + "/artists")
+        .parquet(output_data_path + "/artists")
 
 
-def process_song_table(output_data, song_data_df):
+def create_song_table(output_data_path, song_data_df):
+    """
+    Crate and save song table
+    :param output_data_path: output data location
+    :param song_data_df: song data dataframe
+    """
     # extract columns to create songs table
+    print("Processing song data")
     songs_table = song_data_df.select('song_id', "title", "artist_id", "year", "duration")
     songs_table = songs_table.dropDuplicates(['song_id'])
     songs_table.createOrReplaceTempView("songs")
     # write songs table to parquet files partitioned by year and artist
+    print("Writing song table to s3")
     songs_table.write \
         .partitionBy("year", "artist_id") \
         .mode("overwrite") \
-        .parquet(output_data + "/songs")
+        .parquet(output_data_path + "/songs")
 
 
-def process_log_data(spark, input_data, output_data):
+def process_log_data(spark, input_data_path, output_data_path):
+    """
+    Processes log data and creates/writes various table associated with it
+    :param spark: spark session
+    :param input_data_path: input data location
+    :param output_data_path: output data location
+    """
     # get filepath to log data file
-    log_data = input_data + "/log-data/"
+    log_data = input_data_path + "/log-data/"
 
-    # when reading json spark 2.4.3 cannot infer schema automatically while 3.1.2 can
+    # when reading json spark 2.4.3 cannot infer schema automatically
     log_data_schema = StructType([
         StructField("artist", StringType(), True),
         StructField("auth", StringType(), True),
@@ -102,51 +133,51 @@ def process_log_data(spark, input_data, output_data):
         StructField("userId", StringType(), True),
     ])
 
+    print("Reading log data file")
     # read log data file
     df = spark.read \
         .option("recursiveFileLookup", "true") \
-        .schema(log_data_schema)\
+        .schema(log_data_schema) \
         .json(log_data)
     df.printSchema()
-
     # filter by actions for song plays
     df = df.where(col("page") == "NextSong")
 
+    print("Deduping events")
+
     # dedupe events
     df = df.dropDuplicates(['ts', 'userid', 'sessionid', 'song', 'artist'])
+    print("Caching events")
     df.cache()
 
-    # extract columns for users table
-
-    process_users(df, output_data)
+    process_users_data(df, output_data_path)
 
     # create timestamp column from original timestamp column
-    start_time_column_name = 'start_time'
-    df = df.withColumn(start_time_column_name, from_unixtime(col("ts") / 1000)).drop('ts')
+    df = df.withColumn(START_TIME_COLUMN_NAME, from_unixtime(col("ts") / 1000)).drop('ts')
 
-    time_table = process_time_table(df, output_data, start_time_column_name)
+    time_table = process_time_data(df, output_data_path, START_TIME_COLUMN_NAME)
 
-    process_songplays(df, output_data, spark, start_time_column_name, time_table)
+    process_songplays_data(df, output_data_path, spark, START_TIME_COLUMN_NAME, time_table)
 
 
-def process_songplays(df, output_data, spark, start_time_column_name, time_table):
+def process_songplays_data(log_df, output_data, spark, start_time_column_name, time_table_df):
     """
-    
-    :param df: 
-    :param output_data: 
-    :param spark: 
+    Create and save songplays table
+    :param log_df: dataframe with logs data
+    :param output_data: output location
+    :param spark: spark session
     :param start_time_column_name: 
-    :param time_table: 
-    :return: 
+    :param time_table_df: dataframe with time data
     """
+    print("Creating songplays table")
     # read in song data to use for songplays table
-    song_df = df.withColumn('userAgent', regexp_replace('userAgent', '"', ''))
+    song_df = log_df.withColumn('userAgent', regexp_replace('userAgent', '"', ''))
     artists_and_songs_df = spark.sql("SELECT * FROM songs s JOIN artists a USING(artist_id) ")
     song_df = song_df.join(artists_and_songs_df, [song_df.song == artists_and_songs_df.title, \
                                                   song_df.artist == artists_and_songs_df.artist_name, \
                                                   song_df.length == artists_and_songs_df.duration],
                            'left')
-    song_df = song_df.join(time_table.alias("time_table"), [start_time_column_name], 'inner')
+    song_df = song_df.join(time_table_df.alias("time_table"), [start_time_column_name], 'inner')
     # generate uuid
     # copied code from https://stackoverflow.com/questions/49785108/spark-streaming-with-python-how-to-add-a-uuid-column/50095755
     song_df = song_df.withColumn("songplay_id", expr("uuid()"))
@@ -156,6 +187,7 @@ def process_songplays(df, output_data, spark, start_time_column_name, time_table
                                          'level', 'song_id', 'artist_id',
                                          'sessionId as session_id', 'location',
                                          'userAgent as user_agent', 'time_table.year', 'month')
+    print("Writing songplays table to s3")
     # write songplays table to parquet files partitioned by year and month
     songplays_table \
         .write \
@@ -164,9 +196,17 @@ def process_songplays(df, output_data, spark, start_time_column_name, time_table
         .json(output_data + '/songplays')
 
 
-def process_time_table(df, output_data, start_time_column_name):
+def process_time_data(log_df, output_data_path, start_time_column_name):
+    """
+    Creates and writes time table
+    :param log_df: dataframe with log data
+    :param output_data_path: output data location
+    :param start_time_column_name:
+    :return: dataframe with time data
+    """
+    print("Creating time table")
     # extract columns to create time table
-    time_table = df.selectExpr(start_time_column_name)
+    time_table = log_df.selectExpr(start_time_column_name)
     time_table = time_table.dropDuplicates([start_time_column_name])
     time_table = time_table.selectExpr(start_time_column_name,
                                        f'hour({start_time_column_name}) as hour',
@@ -175,34 +215,43 @@ def process_time_table(df, output_data, start_time_column_name):
                                        f'month({start_time_column_name}) as month',
                                        f'year({start_time_column_name}) as year',
                                        f'dayofweek({start_time_column_name}) as weekday')
+    print("Writing time table to s3")
     # write time table to parquet files partitioned by year and month
     time_table.write \
         .partitionBy("year", "month") \
         .mode("overwrite") \
-        .parquet(output_data + "/time")
+        .parquet(output_data_path + "/time")
     return time_table
 
 
-def process_users(df, output_data):
+def process_users_data(log_data_df, output_data_path):
+    """
+    Create and save users table
+    :param log_data_df: log data dataframe
+    :param output_data_path: output data location
+    """
+    print("Creating users table")
     # Adapted from https://sparkbyexamples.com/pyspark/pyspark-window-functions/
-    users_df = df.withColumn("row_number", row_number().over(
+    users_df = log_data_df.withColumn("row_number", row_number().over(
         Window.partitionBy("userId").orderBy(desc("ts"))))
     deduped_users_df = users_df.where(users_df.row_number == 1)
     users_table = deduped_users_df.select("userId", "firstName", "lastName", "gender", "level")
+
+    print("Writing users data to s3")
     # write users table to parquet files
     users_table \
         .write \
         .mode("overwrite") \
-        .parquet(output_data + "/users")
+        .parquet(output_data_path + "/users")
 
 
 def main():
     spark = create_spark_session()
-    input_data = "s3a://udacity-dend"
-    output_data = "s3a://udacity-data-modelling/sparkify"
+    input_data_path = "s3a://udacity-dend"
+    output_data_path = "s3a://udacity-data-modelling/sparkify"
 
-    process_song_data(spark, input_data, output_data)
-    process_log_data(spark, input_data, output_data)
+    process_song_data(spark, input_data_path, output_data_path)
+    process_log_data(spark, input_data_path, output_data_path)
 
 
 if __name__ == "__main__":
