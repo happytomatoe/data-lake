@@ -61,17 +61,21 @@ wget https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.7.4/aws-java-sd
 4) Go back to project folder
 5) Set `aws access key` and `aws secret key` in `dl.cfg`
 6) Set `output_data_path` variable in `etl.py` main function
-7) Run
-
+7) Run. There are several options how to run etl.py
+   1) 
 ```shell
 spark-submit etl.py
 ```
-Note:
-If you are running this in udacity vm you can specify spark ui port and monitor application 
+   2) If you are running this in udacity vm you can specify spark ui port and monitor application 
 execution 
 ```shell
 spark-submit --conf spark.ui.port=3000 etl.py 
 ```
 And click on preview to open spark history server 
- 
+   3) You can also spark default partitions after shuffle. After shuffle repartitions the data.
+   So if you are using vm with small number of cores it will be faster to use smaller amount of
+   partitons. As a rule of thumb this property should be set to number of cores*2
+```shell
+spark-submit --conf spark.ui.port=3000 --conf spark.sql.shuffle.partitions=2 etl.py
+```
 It will take some time to read/write data
