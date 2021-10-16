@@ -5,7 +5,11 @@ from pyspark.sql import SparkSession, Window
 from pyspark.sql.functions import *
 
 config = configparser.ConfigParser()
-config.read('dl.cfg')
+# Copied code how to get vars from config without header section from
+# https://stackoverflow.com/questions/2819696/parsing-properties-file-in-python/2819788#2819788
+with open('dl.cfg', 'r') as f:
+    config_string = '[AWS]\n' + f.read()
+config.read_string(config_string)
 
 os.environ['AWS_ACCESS_KEY_ID'] = config.get('AWS', 'AWS_ACCESS_KEY_ID')
 os.environ['AWS_SECRET_ACCESS_KEY'] = config.get('AWS', 'AWS_SECRET_ACCESS_KEY')
