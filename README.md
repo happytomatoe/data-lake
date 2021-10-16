@@ -52,7 +52,7 @@ wget https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.7.4/aws-java-sd
 ```
 
 4) Set `aws access key` and `aws secret key` in `dl.cfg`
-5) Change `output_data_path` variable to s3 location in `etl.py` main function
+5) Set `output_data_path` variable in `etl.py` main function
 6) Run
 
 ```shell
