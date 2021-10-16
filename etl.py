@@ -10,8 +10,8 @@ START_TIME_COLUMN_NAME = 'start_time'
 config = configparser.ConfigParser()
 # Copied code how to get vars from config without header section from
 # https://stackoverflow.com/questions/2819696/parsing-properties-file-in-python/2819788#2819788
-with open('dl.cfg', 'r') as f:
-    config_string = '[default]\n' + f.read()
+with open('dl.cfg', 'r') as file:
+    config_string = '[default]\n' + file.read()
 config.read_string(config_string)
 
 # Remove ` at the start and end of the string
@@ -249,6 +249,9 @@ def main():
     spark = create_spark_session()
     input_data_path = "s3a://udacity-dend"
     output_data_path = ""
+
+    if not output_data_path:
+        raise ValueError('output_data_path is not set')
 
     process_song_data(spark, input_data_path, output_data_path)
     process_log_data(spark, input_data_path, output_data_path)
