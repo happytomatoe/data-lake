@@ -80,7 +80,7 @@ def process_log_data(spark, input_data, output_data):
     # get filepath to log data file
     log_data = input_data + "/log-data/"
 
-    # when reading json spark 2.4.3 cannot infer schema automatically
+    # when reading json spark 2.4.3 cannot infer schema automatically while 3.1.2 can
     log_data_schema = StructType([
         StructField("artist", StringType(), True),
         StructField("auth", StringType(), True),
