@@ -247,7 +247,7 @@ def create_users_table(log_data_df, output_data_path):
 def main():
     spark = create_spark_session()
     input_data_path = "s3a://udacity-dend"
-    output_data_path = "s3a://udacity-data-modelling/sparkify"
+    output_data_path = ""
 
     process_song_data(spark, input_data_path, output_data_path)
     process_log_data(spark, input_data_path, output_data_path)

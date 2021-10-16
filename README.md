@@ -52,7 +52,8 @@ wget https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk/1.7.4/aws-java-sd
 ```
 
 4) Set aws access key and aws secret key in dl.cfg
-5) Run
+5) Change output folder in etl.py main function
+6) Run
 
 ```shell
 spark-submit etl.py
