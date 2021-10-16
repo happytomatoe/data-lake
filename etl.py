@@ -79,7 +79,7 @@ def create_artists_table(output_data_path, song_data_df):
     :param output_data_path: output data location
     :param song_data_df: song data dataframe
     """
-    logger.info("Processing artists data")
+    logger.info("Creating artists table")
     artists_table = song_data_df.select("artist_id", "artist_name", "artist_location",
                                         "artist_latitude",
                                         "artist_longitude")
@@ -89,7 +89,7 @@ def create_artists_table(output_data_path, song_data_df):
 
     # write artists table to parquet files
     path = output_data_path + "/artists"
-    logger.info(f"Writing artists data to {path}")
+    logger.info(f"Writing artists table to {path}")
     artists_table.write \
         .mode("overwrite") \
         .parquet(path)
@@ -102,7 +102,7 @@ def create_songs_table(output_data_path, song_data_df):
     :param song_data_df: song data dataframe
     """
     # extract columns to create songs table
-    logger.info("Processing song data")
+    logger.info("Creating songs table")
     songs_table = song_data_df.select('song_id', "title", "artist_id", "year", "duration")
     songs_table = songs_table.dropDuplicates(['song_id'])
     songs_table.createOrReplaceTempView("songs")
@@ -148,7 +148,7 @@ def process_log_data(spark, input_data_path, output_data_path):
         StructField("userId", StringType(), True),
     ])
 
-    logger.info("Reading log data file")
+    logger.info("Reading log data files")
     # read log data file
     df = spark.read \
         .option("recursiveFileLookup", "true") \
@@ -158,7 +158,7 @@ def process_log_data(spark, input_data_path, output_data_path):
     # filter by actions for song plays
     df = df.where(f.col("page") == "NextSong")
 
-    logger.info("Deduping events")
+    logger.info("Deduping log events")
 
     # dedupe events
     df = df.dropDuplicates(['ts', 'userid', 'sessionid', 'song', 'artist'])
@@ -258,7 +258,7 @@ def create_users_table(log_data_df, output_data_path):
 
     # write users table to parquet files
     path = output_data_path + "/users"
-    logger.info(f"Writing users data to {path}")
+    logger.info(f"Writing users table to {path}")
     users_table \
         .write \
         .mode("overwrite") \
